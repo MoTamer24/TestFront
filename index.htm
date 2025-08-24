@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weather App</title>
-    <style>
+   <style>
 * {
     margin: 0;
     padding: 0;
@@ -41,7 +41,7 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: 
+    background:
         radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 25%),
         radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.08) 0%, transparent 30%),
         radial-gradient(circle at 50% 90%, rgba(255, 255, 255, 0.06) 0%, transparent 35%);
@@ -418,15 +418,11 @@ button:disabled {
     }
 }
     </style>
+
 </head>
 <body>
     <div class="container">
         <h1>🌤️ Weather App</h1>
-        
-        <div class="test-section">
-            <button onclick="testConnection()">Test API Connection</button>
-            <div id="testResult"></div>
-        </div>
 
         <div class="search-section">
             <div class="search-container">
@@ -445,9 +441,10 @@ button:disabled {
     </div>
 
     <script>
-        const API_BASE_URL = 'http://weathertestapp.runasp.net'; // Adjust port if different
-        const COUNTRIES_API = 'https://countriesnow.space/api/v0.1/countries';
         
+        const API_KEY = "696f22d9d5fbbfc4d91266f070850245";
+
+        const COUNTRIES_API = 'https://countriesnow.space/api/v0.1/countries';
         let countriesData = [];
 
         // Load countries on page load
@@ -455,26 +452,20 @@ button:disabled {
 
         async function loadCountries() {
             const countrySelect = document.getElementById('countrySelect');
-            
             try {
                 const response = await fetch(COUNTRIES_API);
                 const data = await response.json();
-                
+
                 if (data.error === false && data.data) {
                     countriesData = data.data;
-                    
-                    // Sort countries alphabetically
                     countriesData.sort((a, b) => a.country.localeCompare(b.country));
-                    
-                    // Populate country dropdown
+
                     countriesData.forEach(country => {
                         const option = document.createElement('option');
                         option.value = country.country;
                         option.textContent = country.country;
                         countrySelect.appendChild(option);
                     });
-                } else {
-                    console.error('Failed to load countries data');
                 }
             } catch (error) {
                 console.error('Error loading countries:', error);
@@ -485,29 +476,22 @@ button:disabled {
             const countrySelect = document.getElementById('countrySelect');
             const citySelect = document.getElementById('citySelect');
             const weatherButton = document.getElementById('weatherButton');
-            
+
             const selectedCountry = countrySelect.value;
-            
-            // Clear city dropdown
             citySelect.innerHTML = '<option value="">Select a city...</option>';
             citySelect.disabled = true;
             weatherButton.disabled = true;
-            
+
             if (selectedCountry) {
                 const country = countriesData.find(c => c.country === selectedCountry);
-                
                 if (country && country.cities) {
-                    // Sort cities alphabetically
                     const sortedCities = country.cities.sort();
-                    
-                    // Populate city dropdown
                     sortedCities.forEach(city => {
                         const option = document.createElement('option');
                         option.value = city;
                         option.textContent = city;
                         citySelect.appendChild(option);
                     });
-                    
                     citySelect.disabled = false;
                     citySelect.addEventListener('change', function() {
                         weatherButton.disabled = !this.value;
@@ -516,48 +500,28 @@ button:disabled {
             }
         }
 
-        async function testConnection() {
-            const resultDiv = document.getElementById('testResult');
-            const button = event.target;
-            
-            button.disabled = true;
-            resultDiv.innerHTML = '<div class="loading">Testing connection...</div>';
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/test`);
-                
-                if (response.ok) {
-                    const data = await response.text();
-                    resultDiv.innerHTML = `<div class="success">✅ Connection successful: ${data}</div>`;
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">❌ Connection failed: ${error.message}</div>`;
-                console.error('Test connection error:', error);
-            } finally {
-                button.disabled = false;
-            }
-        }
-
         async function getWeather() {
-            const citySelect = document.getElementById('citySelect');
+            const city = document.getElementById('citySelect').value;
             const resultDiv = document.getElementById('weatherResult');
             const button = document.getElementById('weatherButton');
-            
-            const city = citySelect.value;
-            
+
             if (!city) {
                 resultDiv.innerHTML = '<div class="error">Please select a city.</div>';
                 return;
             }
-            
+
+            if (!API_KEY || API_KEY === "PUT_YOUR_API_KEY_HERE") {
+                resultDiv.innerHTML = '<div class="error">Please configure your OpenWeather API key in the code.</div>';
+                return;
+            }
+
             button.disabled = true;
             resultDiv.innerHTML = '<div class="loading">🔍 Fetching weather data...</div>';
-            
+
             try {
-                const response = await fetch(`${API_BASE_URL}/weather?city=${encodeURIComponent(city)}`);
-                
+                const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`;
+                const response = await fetch(url);
+
                 if (response.ok) {
                     const weather = await response.json();
                     displayWeather(weather);
@@ -567,12 +531,7 @@ button:disabled {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
             } catch (error) {
-                if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    resultDiv.innerHTML = '<div class="error">❌ Unable to connect to the server. Make sure the API is running and CORS is configured.</div>';
-                } else {
-                    resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
-                }
-                console.error('Weather fetch error:', error);
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
             } finally {
                 button.disabled = false;
             }
@@ -580,55 +539,31 @@ button:disabled {
 
         function displayWeather(weather) {
             const resultDiv = document.getElementById('weatherResult');
-            
             const weatherCard = `
                 <div class="weather-card">
-                    <div class="city-name">${weather.city}, ${weather.country}</div>
-                    <div class="temperature">${Math.round(weather.temperature)}°C</div>
-                    <div class="description">${weather.description}</div>
-                    
+                    <div class="city-name">${weather.name}, ${weather.sys.country}</div>
+                    <div class="temperature">${Math.round(weather.main.temp)}°C</div>
+                    <div class="description">${weather.weather[0].description}</div>
+
                     <div class="weather-details">
                         <div class="detail-item">
                             <div class="detail-label">Humidity</div>
-                            <div class="detail-value">${weather.humidity}%</div>
+                            <div class="detail-value">${weather.main.humidity}%</div>
                         </div>
                         <div class="detail-item">
                             <div class="detail-label">Wind Speed</div>
-                            <div class="detail-value">${weather.windSpeed} m/s</div>
+                            <div class="detail-value">${weather.wind.speed} m/s</div>
                         </div>
                     </div>
                 </div>
             `;
-            
             resultDiv.innerHTML = weatherCard;
-            
-            // Trigger animation
+
             setTimeout(() => {
                 const card = resultDiv.querySelector('.weather-card');
-                if (card) {
-                    card.classList.add('show');
-                }
+                if (card) card.classList.add('show');
             }, 100);
         }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                const citySelect = document.getElementById('citySelect');
-                if (!citySelect.disabled && citySelect.value) {
-                    getWeather();
-                }
-            }
-        }
-
-        // Add keyboard navigation for dropdowns
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                const activeElement = document.activeElement;
-                if (activeElement.id === 'citySelect' && activeElement.value) {
-                    getWeather();
-                }
-            }
-        });
     </script>
 </body>
 </html>
