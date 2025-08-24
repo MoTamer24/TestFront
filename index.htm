@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    min-height: 100vh;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 20px;
+    color: #333;
+    position: relative;
+    z-index: 1;
+}
+
+/* Subtle wave background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 25%),
+        radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.08) 0%, transparent 30%),
+        radial-gradient(circle at 50% 90%, rgba(255, 255, 255, 0.06) 0%, transparent 35%);
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.6;
+    animation: floatRipples 20s infinite linear;
+}
+
+@keyframes floatRipples {
+    0% { transform: translateY(0) translateX(0); }
+    100% { transform: translateY(-10px) translateX(10px); }
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    border-radius: 24px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+    padding: 50px 40px;
+    width: 100%;
+    max-width: 520px;
+    text-align: center;
+    transform: translateY(20px);
+    opacity: 0;
+    animation: fadeInUp 0.8s ease-out forwards;
+    position: relative;
+    z-index: 1;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.container:hover {
+    transform: translateY(10px);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.25);
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+h1 {
+    color: #2c3e50;
+    margin-bottom: 35px;
+    font-size: 2.7rem;
+    font-weight: 300;
+    letter-spacing: -0.8px;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+    display: inline-block;
+}
+
+h1 span {
+    display: inline-block;
+    animation: floatIcon 3s ease-in-out infinite;
+    margin-right: 10px;
+    transform-origin: center bottom;
+}
+
+@keyframes floatIcon {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px) rotate(5deg); }
+}
+
+h1::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70%;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 2px;
+    box-shadow: 0 0 15px rgba(102, 126, 234, 0.6);
+}
+
+.search-section {
+    margin-bottom: 35px;
+}
+
+.search-container {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-bottom: 15px;
+}
+
+.dropdown-container {
+    display: flex;
+    gap: 12px;
+}
+
+select, input[type="text"] {
+    flex: 1;
+    padding: 16px 18px;
+    border: 2px solid #e1e5e9;
+    border-radius: 12px;
+    font-size: 16px;
+    outline: none;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    background: white;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+select:focus, input[type="text"]:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 6px rgba(102, 126, 234, 0.2);
+    transform: translateY(-2px);
+    z-index: 2;
+}
+
+select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f8f9fa;
+}
+
+button {
+    padding: 16px 28px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    letter-spacing: 0.5px;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.6s;
+    z-index: -1;
+}
+
+button:hover::before {
+    left: 120%;
+}
+
+button:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+}
+
+button:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 6px 15px rgba(102, 126, 234, 0.3);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.test-section {
+    margin-bottom: 30px;
+}
+
+.weather-card {
+    background: linear-gradient(135deg, #5a6fd8, #6a4c93);
+    color: white;
+    border-radius: 18px;
+    padding: 36px 30px;
+    margin-top: 25px;
+    box-shadow: 0 20px 50px rgba(102, 126, 234, 0.35);
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.7s cubic-bezier(0.3, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.weather-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+    transform: rotate(45deg);
+    z-index: 0;
+}
+
+.weather-card:hover::before {
+    opacity: 1;
+}
+
+.weather-card.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.city-name {
+    font-size: 2.2rem;
+    font-weight: 300;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.temperature {
+    font-size: 4rem;
+    font-weight: bold;
+    margin: 16px 0;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    animation: pulseGlow 2s infinite alternate;
+}
+
+@keyframes pulseGlow {
+    from { text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); }
+    to { text-shadow: 0 4px 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 200, 100, 0.4); }
+}
+
+.description {
+    font-size: 1.3rem;
+    margin-bottom: 24px;
+    text-transform: capitalize;
+    position: relative;
+    z-index: 1;
+    opacity: 0.95;
+    font-weight: 500;
+}
+
+.description::before {
+    content: '🌤️';
+    margin-right: 8px;
+}
+
+.weather-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 24px;
+    position: relative;
+    z-index: 1;
+}
+
+.detail-item {
+    background: rgba(255, 255, 255, 0.18);
+    padding: 18px 16px;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.detail-item:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.28);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.detail-label {
+    font-size: 0.95rem;
+    opacity: 0.85;
+    margin-bottom: 6px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.detail-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.loading {
+    color: #5a6fd8;
+    font-style: italic;
+    margin: 22px 0;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+    animation: fadeIn 0.6s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.error, .success {
+    padding: 16px;
+    border-radius: 12px;
+    margin: 22px 0;
+    border-left: 5px solid;
+    text-align: left;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease;
+}
+
+.error:hover, .success:hover {
+    transform: translateX(5px);
+}
+
+.error {
+    color: #c0392b;
+    background: rgba(231, 76, 60, 0.12);
+    border-color: #e74c3c;
+}
+
+.success {
+    color: #27ae60;
+    background: rgba(39, 174, 96, 0.12);
+    border-color: #2ecc71;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    body {
+        padding: 30px 15px;
+    }
+
+    .container {
+        padding: 30px 25px;
+        border-radius: 20px;
+    }
+
+    h1 {
+        font-size: 2.2rem;
+    }
+
+    .dropdown-container {
+        flex-direction: column;
+    }
+
+    .weather-details {
+        grid-template-columns: 1fr;
+    }
+
+    .temperature {
+        font-size: 3.3rem;
+    }
+
+    .city-name {
+        font-size: 2rem;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌤️ Weather App</h1>
+        
+        <div class="test-section">
+            <button onclick="testConnection()">Test API Connection</button>
+            <div id="testResult"></div>
+        </div>
+
+        <div class="search-section">
+            <div class="search-container">
+                <div class="dropdown-container">
+                    <select id="countrySelect" onchange="loadCities()">
+                        <option value="">Select a country...</option>
+                    </select>
+                    <select id="citySelect" disabled>
+                        <option value="">Select a city...</option>
+                    </select>
+                </div>
+                <button onclick="getWeather()" id="weatherButton" disabled>Get Weather</button>
+            </div>
+            <div id="weatherResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5181'; // Adjust port if different
+        const COUNTRIES_API = 'https://countriesnow.space/api/v0.1/countries';
+        
+        let countriesData = [];
+
+        // Load countries on page load
+        window.addEventListener('load', loadCountries);
+
+        async function loadCountries() {
+            const countrySelect = document.getElementById('countrySelect');
+            
+            try {
+                const response = await fetch(COUNTRIES_API);
+                const data = await response.json();
+                
+                if (data.error === false && data.data) {
+                    countriesData = data.data;
+                    
+                    // Sort countries alphabetically
+                    countriesData.sort((a, b) => a.country.localeCompare(b.country));
+                    
+                    // Populate country dropdown
+                    countriesData.forEach(country => {
+                        const option = document.createElement('option');
+                        option.value = country.country;
+                        option.textContent = country.country;
+                        countrySelect.appendChild(option);
+                    });
+                } else {
+                    console.error('Failed to load countries data');
+                }
+            } catch (error) {
+                console.error('Error loading countries:', error);
+            }
+        }
+
+        function loadCities() {
+            const countrySelect = document.getElementById('countrySelect');
+            const citySelect = document.getElementById('citySelect');
+            const weatherButton = document.getElementById('weatherButton');
+            
+            const selectedCountry = countrySelect.value;
+            
+            // Clear city dropdown
+            citySelect.innerHTML = '<option value="">Select a city...</option>';
+            citySelect.disabled = true;
+            weatherButton.disabled = true;
+            
+            if (selectedCountry) {
+                const country = countriesData.find(c => c.country === selectedCountry);
+                
+                if (country && country.cities) {
+                    // Sort cities alphabetically
+                    const sortedCities = country.cities.sort();
+                    
+                    // Populate city dropdown
+                    sortedCities.forEach(city => {
+                        const option = document.createElement('option');
+                        option.value = city;
+                        option.textContent = city;
+                        citySelect.appendChild(option);
+                    });
+                    
+                    citySelect.disabled = false;
+                    citySelect.addEventListener('change', function() {
+                        weatherButton.disabled = !this.value;
+                    });
+                }
+            }
+        }
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('testResult');
+            const button = event.target;
+            
+            button.disabled = true;
+            resultDiv.innerHTML = '<div class="loading">Testing connection...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/test`);
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    resultDiv.innerHTML = `<div class="success">✅ Connection successful: ${data}</div>`;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Connection failed: ${error.message}</div>`;
+                console.error('Test connection error:', error);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        async function getWeather() {
+            const citySelect = document.getElementById('citySelect');
+            const resultDiv = document.getElementById('weatherResult');
+            const button = document.getElementById('weatherButton');
+            
+            const city = citySelect.value;
+            
+            if (!city) {
+                resultDiv.innerHTML = '<div class="error">Please select a city.</div>';
+                return;
+            }
+            
+            button.disabled = true;
+            resultDiv.innerHTML = '<div class="loading">🔍 Fetching weather data...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/weather?city=${encodeURIComponent(city)}`);
+                
+                if (response.ok) {
+                    const weather = await response.json();
+                    displayWeather(weather);
+                } else if (response.status === 404) {
+                    resultDiv.innerHTML = '<div class="error">❌ City not found. Please try a different city.</div>';
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    resultDiv.innerHTML = '<div class="error">❌ Unable to connect to the server. Make sure the API is running and CORS is configured.</div>';
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                }
+                console.error('Weather fetch error:', error);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        function displayWeather(weather) {
+            const resultDiv = document.getElementById('weatherResult');
+            
+            const weatherCard = `
+                <div class="weather-card">
+                    <div class="city-name">${weather.city}, ${weather.country}</div>
+                    <div class="temperature">${Math.round(weather.temperature)}°C</div>
+                    <div class="description">${weather.description}</div>
+                    
+                    <div class="weather-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Humidity</div>
+                            <div class="detail-value">${weather.humidity}%</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Wind Speed</div>
+                            <div class="detail-value">${weather.windSpeed} m/s</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultDiv.innerHTML = weatherCard;
+            
+            // Trigger animation
+            setTimeout(() => {
+                const card = resultDiv.querySelector('.weather-card');
+                if (card) {
+                    card.classList.add('show');
+                }
+            }, 100);
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                const citySelect = document.getElementById('citySelect');
+                if (!citySelect.disabled && citySelect.value) {
+                    getWeather();
+                }
+            }
+        }
+
+        // Add keyboard navigation for dropdowns
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                const activeElement = document.activeElement;
+                if (activeElement.id === 'citySelect' && activeElement.value) {
+                    getWeather();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
